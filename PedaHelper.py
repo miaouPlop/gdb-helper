@@ -50,9 +50,9 @@ def blue(text, attrib=None):
 
 
 class Peda(Gdb):
-    def __init__(self, prog):
+    def __init__(self, prog, until=None):
         self._prompt = "\001%s\002" % red("\002gdb-peda$ \001")
-        super(Peda, self).__init__(prog)
+        super(Peda, self).__init__(prog, until)
 
     def _init(self):
         self._waitprompt()
@@ -89,6 +89,9 @@ class Peda(Gdb):
         self.send("searchmem %s" % what)
         return self._waitprompt()
 
+    def session(self):
+        return open("peda-session-%s.txt" % self._prog.replace("./", "")).read()
+
     def skipi(self, number):
         self.send("skipi %s" % number)
         return self._waitprompt()
@@ -123,3 +126,14 @@ class Peda(Gdb):
     def xuntil(self, where):
         self.send("xuntil %s" % where)
         return self._waitprompt()
+
+    # TODO
+    def heap(self):
+        mmap = self.vmmap().splitlines()
+        for i in mmap:
+            if "[heap]" in i:
+                heap_start = i.split()[0].strip("\x1b[m")
+                heap_end = i.split()[1]
+                heap_perm = i.split()[2]
+        print(self.x(heap_start, "gx", 200))
+        return heap_start, heap_end, heap_perm

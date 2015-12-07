@@ -1,12 +1,14 @@
 # coding=utf-8
 
 
+import signal
 from pwn import *
 
 
 class Gdb(object):
-    def __init__(self, prog):
+    def __init__(self, prog, until=None):
         self._prog = prog
+        self._until = until
         self._process = process(["gdb"])
         self._init()
 
@@ -29,7 +31,10 @@ class Gdb(object):
 
     def recv(self, until=None):
         if until is None:
-            return self._process.recv()
+            if self._until is None:
+                return self._process.recv()
+            else:
+                return self._process.recvuntil(self._until)
         else:
             return self._process.recvuntil(until)
 
@@ -38,6 +43,15 @@ class Gdb(object):
 
     def interactive(self):
         self._process.interactive()
+
+    def i(self):
+        self.interactive()
+
+    # TODO
+    def interrupt(self):
+        signal.siginterrupt(signal.SIGINT, False)
+        self._process.proc.send_signal(signal.SIGINT)
+        print(self._process.proc.communicate())
 
     def bp(self, where):
         self.send("break %s" % where)
@@ -55,12 +69,19 @@ class Gdb(object):
         self.send("disassemble %s" % what)
         return self._waitprompt()
 
-    def e(self, what, until=None, prompt=False):
+    def e(self, what, until=None, prompt=False, skipbp=False):
+        if until is not None and skipbp is True:
+            raise AttributeError("Until attribute can't be used with skipbp attribute")
         self.send(what)
-        if prompt is True:
-            return self._waitprompt()
+        if skipbp is True:
+            ret = self._waitprompt()
+            ret += self.c(until)
+            return ret
         else:
-            return self.recv(until)
+            if prompt is True:
+                return self._waitprompt()
+            else:
+                return self.recv(until)
 
     def hb(self, where):
         self.send("hbreak %s" % where)
