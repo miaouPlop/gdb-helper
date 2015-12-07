@@ -4,7 +4,9 @@ Lightweight helper class to instrument GDB using Python
 
 ## Dependancies
 [pwntools](https://github.com/Gallopsled/pwntools)
+
 [libheap](https://github.com/cloudburst/libheap)
+
 
 You should also get [peda](https://github.com/longld/peda)
 
@@ -36,4 +38,5 @@ show = debug.e("show")
 user_id = show.split("ID")[1].split("= ")[1].split("\n")[0]
 debug.e("free %s" % user_id, prompt=True)
 debug.i()
+
 ```
