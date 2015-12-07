@@ -1,7 +1,7 @@
 # coding=utf-8
 
 
-from GdbHelper import Gdb
+from gdbhelper import Gdb
 
 
 def colorize(text, color=None, attrib=None):

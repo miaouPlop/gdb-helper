@@ -12,6 +12,8 @@ __pycache__/
 core
 .gdb_history
 exploit.py
+ch*
+peda-*
 
 # Distribution / packaging
 .Python

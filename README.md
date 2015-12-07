@@ -2,12 +2,19 @@
 Lightweight helper class to instrument GDB using Python
 
 
+## Dependancies
+[pwntools](https://github.com/Gallopsled/pwntools)
+[libheap](https://github.com/cloudburst/libheap)
+
+You should also get [peda](https://github.com/longld/peda)
+
+
 ## Usage
 ```python
 # coding=utf-8
 
 
-from PedaHelper import Peda
+from pedahelper import Peda
 
 
 debug = Peda("./abcd", until=">")
