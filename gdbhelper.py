@@ -34,9 +34,9 @@ class Gdb(object):
             if self._until is None:
                 return self._process.recv()
             else:
-                return self._process.recvuntil(self._until)
+                return self._process.recvuntil(self._until, timeout=1)
         else:
-            return self._process.recvuntil(until)
+            return self._process.recvuntil(until, timeout=1)
 
     def recvuntilprompt(self):
         return self._waitprompt()
@@ -47,11 +47,13 @@ class Gdb(object):
     def i(self):
         self.interactive()
 
-    # TODO
-    def interrupt(self):
-        signal.siginterrupt(signal.SIGINT, False)
-        self._process.proc.send_signal(signal.SIGINT)
-        print(self._process.proc.communicate())
+    def sigint(self):
+        context.log_level = "error"
+        p = process("ps aux|grep -v 'grep'|grep '%s'" % self._prog,
+                    shell=True).recv().split(" ")[2]
+        process("kill -INT %s" % p, shell=True)
+        context.log_level = "info"
+        return self._waitprompt()
 
     def bp(self, where):
         self.send("break %s" % where)
