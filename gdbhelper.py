@@ -2,6 +2,7 @@
 
 
 import signal
+import psutil
 from pwn import *
 
 
@@ -41,6 +42,24 @@ class Gdb(object):
     def recvuntilprompt(self):
         return self._waitprompt()
 
+    def execute(self, what, until=None, prompt=False, skipbp=False):
+        if until is not None and skipbp is True:
+            raise AttributeError("Until attribute can't be used with "
+                                 "skipbp attribute")
+        self.send(what)
+        if skipbp is True:
+            ret = self._waitprompt()
+            ret += self.c(until)
+            return ret
+        else:
+            if prompt is True:
+                return self._waitprompt()
+            else:
+                return self.recv(until)
+
+    def e(self, what, until=None, prompt=False, skipbp=False):
+        return self.execute(what, until, prompt, skipbp)
+
     def interactive(self):
         self._process.interactive()
 
@@ -48,11 +67,14 @@ class Gdb(object):
         self.interactive()
 
     def sigint(self):
-        context.log_level = "error"
-        p = process("ps aux|grep -v 'grep'|grep '%s'" % self._prog,
-                    shell=True).recv().split(" ")[2]
-        process("kill -INT %s" % p, shell=True)
-        context.log_level = "info"
+        for p in psutil.process_iter():
+            if p.parent() is not None:
+                if p.parent().name() == "gdb" \
+                        and p.name() in self._prog:
+                    p.send_signal(signal.SIGINT)
+                    break
+        # essential because it intercepts the "quit" before it is sent
+        # to the debugger
         return self._waitprompt()
 
     def bp(self, where):
@@ -70,20 +92,6 @@ class Gdb(object):
     def disass(self, what):
         self.send("disassemble %s" % what)
         return self._waitprompt()
-
-    def e(self, what, until=None, prompt=False, skipbp=False):
-        if until is not None and skipbp is True:
-            raise AttributeError("Until attribute can't be used with skipbp attribute")
-        self.send(what)
-        if skipbp is True:
-            ret = self._waitprompt()
-            ret += self.c(until)
-            return ret
-        else:
-            if prompt is True:
-                return self._waitprompt()
-            else:
-                return self.recv(until)
 
     def hb(self, where):
         self.send("hbreak %s" % where)
