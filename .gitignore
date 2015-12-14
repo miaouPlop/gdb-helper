@@ -14,6 +14,8 @@ core
 exploit.py
 ch*
 peda-*
+out*
+trace*
 
 # Distribution / packaging
 .Python

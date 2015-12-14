@@ -10,6 +10,7 @@ class Gdb(object):
     def __init__(self, prog, until=None):
         self._prog = prog
         self._until = until
+        self._session = ""
         self._process = process(["gdb"])
         self._init()
 
@@ -42,10 +43,13 @@ class Gdb(object):
     def recvuntilprompt(self):
         return self._waitprompt()
 
-    def execute(self, what, until=None, prompt=False, skipbp=False):
+    def execute(self, what, until=None, prompt=False, skipbp=False,
+                nosession=False):
         if until is not None and skipbp is True:
             raise AttributeError("Until attribute can't be used with "
                                  "skipbp attribute")
+        if nosession is False:
+            self._session += "%s\n" % what
         self.send(what)
         if skipbp is True:
             ret = self._waitprompt()
@@ -57,14 +61,18 @@ class Gdb(object):
             else:
                 return self.recv(until)
 
-    def e(self, what, until=None, prompt=False, skipbp=False):
-        return self.execute(what, until, prompt, skipbp)
+    def e(self, what, until=None, prompt=False, skipbp=False,
+          nosession=False):
+        return self.execute(what, until, prompt, skipbp, nosession)
 
     def interactive(self):
         self._process.interactive()
 
     def i(self):
         self.interactive()
+
+    def session(self):
+        return self._session
 
     def sigint(self):
         for p in psutil.process_iter():

@@ -89,9 +89,6 @@ class Peda(Gdb):
         self.send("searchmem %s" % what)
         return self._waitprompt()
 
-    def session(self):
-        return open("peda-session-%s.txt" % self._prog.replace("./", "")).read()
-
     def skipi(self, number):
         self.send("skipi %s" % number)
         return self._waitprompt()
