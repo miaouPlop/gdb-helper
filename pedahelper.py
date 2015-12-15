@@ -61,6 +61,10 @@ class Peda(Gdb):
     def _waitprompt(self):
         return self._process.recvuntil(self._prompt)[:-len(self._prompt)]
 
+    def aslr(self, what="on"):
+        self.send("aslr %s" % what)
+        return self._waitprompt()
+
     def disass(self, what):
         self.send("pdisass %s" % what)
         return self._waitprompt()
