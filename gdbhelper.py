@@ -34,11 +34,13 @@ class Gdb(object):
     def recv(self, until=None):
         if until is None:
             if self._until is None:
-                return self._process.recv()
+                ret = self._process.recv()
             else:
-                return self._process.recvuntil(self._until, timeout=1)
+                # ret = self._process.recvuntil(self._until, timeout=1)
+                ret = self._process.recvrepeat(0.1)
         else:
-            return self._process.recvuntil(until, timeout=1)
+            ret = self._process.recvuntil(until, timeout=1)
+        return ret
 
     def recvuntilprompt(self):
         return self._waitprompt()

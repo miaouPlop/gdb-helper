@@ -17,6 +17,8 @@ peda-*
 out*
 trace*
 .passwd
+dump_*
+xxd_*
 
 # Distribution / packaging
 .Python

@@ -69,6 +69,10 @@ class Peda(Gdb):
         self.send("pdisass %s" % what)
         return self._waitprompt()
 
+    def dumpmem(self, name, begin, end):
+        self.send("dumpmem %s %s %s" % (name, begin, end))
+        return self._waitprompt()
+
     def goto(self, where):
         self.send("goto %s" % where)
         return self._waitprompt()
@@ -83,6 +87,18 @@ class Peda(Gdb):
 
     def nextjmp(self, where):
         self.send("nextjmp %s" % where)
+        return self._waitprompt()
+
+    def pattern_create(self, count):
+        self.send("pattern_create %d" % count)
+        return self._waitprompt().replace("'", "")
+
+    def pattern_offset(self, pattern):
+        self.send("pattern_offset %s" % pattern)
+        return self._waitprompt()
+
+    def pattern_search(self, pattern):
+        self.send("pattern_search %s" % pattern)
         return self._waitprompt()
 
     def refsearch(self, what):
