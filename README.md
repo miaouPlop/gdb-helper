@@ -124,4 +124,5 @@ debug.i()  # (6)
 6. We use the interactive console to step into the shellcode and watch everything's going well!
 
 You can obviously use all `gdbhelper.Gdb` methods from `gdbhelper.Peda` or `gdbhelper.Pwndbg`. I invite you to discover
-all available methods of those three classes with their arguments by yourself.
+all available methods of those three classes with their arguments by yourself. You'll see, the `gdbhelper.Gdb.sigint`
+method is incredibly useful sometimes!
