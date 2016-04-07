@@ -126,3 +126,10 @@ debug.i()  # (6)
 You can obviously use all `gdbhelper.Gdb` methods from `gdbhelper.Peda` or `gdbhelper.Pwndbg`. I invite you to discover
 all available methods of those three classes with their arguments by yourself. You'll see, the `gdbhelper.Gdb.sigint`
 method is incredibly useful sometimes!
+
+## TODO
+- [ ] add convenient methods to each helper class (especially to `gdbhelper.Pwndbg`)
+- [ ] create more examples
+- [ ] integrate this directly to `pwnlib.gdb` if there are positive feedback
+
+##### :exclamation: DO NOT HESITATE TO PARTICIPATE TO THIS PROJECT EITHER BY COMMITING OR BY ASKING FOR FEATURES/ADDING BUG REPORTS/ETC. :exclamation:
