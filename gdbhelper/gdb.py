@@ -1,32 +1,40 @@
 # coding=utf-8
 
 
-import signal
-import psutil
-from pwn import *
+from os import environ
+from signal import SIGINT
+from psutil import process_iter
+from pwn import process
 
 
 class Gdb(object):
-    def __init__(self, prog, until=None):
-        self._prog = prog
+    def __init__(self, prog, until=None, prompt="(gdb) ", procname="gdb"):
+        self._target = prog
         self._until = until
         self._session = ""
-        self._process = process(["gdb"])
+        self._prompt = prompt
+        self._procname = procname
         self._init()
 
     def _init(self):
-        self._waitprompt()
+        self._process = process([environ["SHELL"], "-i", "-c", self._procname + " -q"])
+        self._process.recvrepeat(0.3)
+        self.send("set confirm off")
         self._loadfile()
+
+    def _loadfile(self):
+        self.recv()
+        self._process.sendline("file %s" % self._target)
+        self._waitprompt()
 
     def _quit(self):
         self._process.sendline("quit")
 
     def _waitprompt(self):
-        return self._process.recvuntil("gdb")[:-3]
+        return self._process.recvuntil(self._prompt)[:-len(self._prompt)]
 
-    def _loadfile(self):
-        self._process.sendline("file %s" % self._prog)
-        self._waitprompt()
+    def close(self):
+        self._quit()
 
     def send(self, what):
         self._process.sendline(what)
@@ -76,13 +84,19 @@ class Gdb(object):
     def session(self):
         return self._session
 
-    def sigint(self):
-        for p in psutil.process_iter():
+    def getprocess(self):
+        for p in process_iter():
+            # print(p.parent(), p.name())
             if p.parent() is not None:
                 if p.parent().name() == "gdb" \
-                        and p.name() in self._prog:
-                    p.send_signal(signal.SIGINT)
-                    break
+                        and p.name() in self._target:
+                    return p
+
+    def pid(self):
+        return self.getprocess().pid
+
+    def sigint(self):
+        self.getprocess().send_signal(SIGINT)
         # essential because it intercepts the "quit" before it is sent
         # to the debugger
         return self._waitprompt()
@@ -95,9 +109,8 @@ class Gdb(object):
         self.send("backtrace")
         return self._waitprompt()
 
-    def c(self, until=None):
-        self.send("continue")
-        return self.recv(until)
+    def c(self, until=None, prompt=False, skipbp=False):
+        return self.execute("continue", until, prompt, skipbp)
 
     def disass(self, what):
         self.send("disassemble %s" % what)
@@ -123,9 +136,12 @@ class Gdb(object):
         reg, value = x.split(":")
         return reg, value.strip()
 
-    def r(self, until=None):
-        self.send("run")
-        return self.recv(until)
+    def r(self, args=None, until=None, prompt=False, skipbp=False):
+        if args is not None:
+            cmd = "run %s" % args
+        else:
+            cmd = "run"
+        return self.execute(cmd, until, prompt, skipbp)
 
     def set(self, key, value):
         self.send("set %s=%s" % (key, value))
@@ -133,6 +149,10 @@ class Gdb(object):
 
     def si(self):
         self.send("stepi")
+        return self._waitprompt()
+
+    def start(self):
+        self.send("start")
         return self._waitprompt()
 
     def watch(self, where):
