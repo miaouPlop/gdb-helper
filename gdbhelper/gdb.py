@@ -39,15 +39,17 @@ class Gdb(object):
     def send(self, what):
         self._process.sendline(what)
 
-    def recv(self, until=None):
+    def recv(self, until=None, prompt=False):
         if until is None:
-            if self._until is None:
+            if prompt is True:
+                ret = self._waitprompt()
+            elif self._until is None:
                 ret = self._process.recv()
             else:
                 # ret = self._process.recvuntil(self._until, timeout=1)
                 ret = self._process.recvrepeat(0.1)
         else:
-            ret = self._process.recvuntil(until, timeout=1)
+                ret = self._process.recvuntil(until, timeout=1)
         return ret
 
     def recvuntilprompt(self):
@@ -111,6 +113,10 @@ class Gdb(object):
 
     def c(self, until=None, prompt=False, skipbp=False):
         return self.execute("continue", until, prompt, skipbp)
+
+    def dis(self, bp):
+        self.send("disable %d" % bp)
+        return self._waitprompt()
 
     def disass(self, what):
         self.send("disassemble %s" % what)

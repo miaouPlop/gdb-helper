@@ -61,15 +61,15 @@ class Peda(Gdb):
 
     def pattern_create(self, count):
         self.send("pattern_create %d" % count)
-        return self._waitprompt().replace("'", "")
+        return self._waitprompt().replace("\x1b[0m", "").replace("\x1b[m", "").strip()
 
     def pattern_offset(self, pattern):
         self.send("pattern_offset %s" % pattern)
-        return self._waitprompt()
+        return int(self._waitprompt().replace("\x1b[0m", "").replace("\x1b[m", "").strip().split("offset: ")[1])
 
     def pattern_search(self, pattern):
         self.send("pattern_search %s" % pattern)
-        return self._waitprompt()
+        return self._waitprompt().replace("\x1b[0m", "").replace("\x1b[m", "").strip()
 
     def refsearch(self, what):
         self.send("refsearch %s" % what)

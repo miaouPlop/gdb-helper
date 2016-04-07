@@ -25,8 +25,8 @@ alias gdb='echo "" > ~/.gdbinit && /usr/bin/gdb'
 This way, when you'll use Peda it will be able to launch it from anywhere on your system.
 
 ## Basics
-Let's begin by using "crackme1" (32b). After an incredibly hard analysis we saw that 0x8048545 seems interesting
-(strcmp) so we'll launch our program and break the to see what's going on.
+Let's begin by using "crackme1" (32b). After an incredibly hard analysis we saw that `0x8048545` seems interesting
+(`strcmp`) so we'll launch our program and break there to see what's going on.
 ```python
 # coding=utf-8
 
@@ -39,49 +39,55 @@ debug.bp("*0x8048545")  # (2)
 debug.r("blurp", prompt=True)  # (3)
 value = debug.reg("esp")[1]  # (4)
 print(debug.x(value, "s"))  # (5)
+
 ```
 1. We load the binary in GDB (it's not being run yet)
 2. We set our breakpoint
 3. We run the binary with its argument and inform gdbhelper that we wait for the GDB prompt (because of the BP) before
 returning a result
-4. We ask for the value of ESP (which is the 1st argument of strcmp)
+4. We ask for the value of `ESP` (which is the 1st argument of `strcmp`)
 5. We print it's value and voilà!
 
-## Dependancies
-[pwntools](https://github.com/Gallopsled/pwntools)
-
-[libheap](https://github.com/cloudburst/libheap)
-
-
-You should also get [peda](https://github.com/longld/peda)
-
-
-## Usage
+Let's now try with the "crackme2" (64b). After a quick analysis, we've come to that script (which is a nonsense but
+that for the sake of the example):
 ```python
 # coding=utf-8
 
 
-from pedahelper import Peda
+from gdbhelper import Pwndbg
 
 
-debug = Peda("./abcd", until=">")
-debug.bp("*0x0000000000400b69")
-debug.r(until="show\n>")
-debug.e("new %s" % ("A"*0x75))
-debug.e("new %s" % ("A"*0x107))
-show = debug.e("show")
-user_id = show.split("ID")[1].split("= ")[1].split("\n")[0]
-debug.e("free %s" % user_id, prompt=True)
-rax, value = debug.reg("rax")
-debug.ni()
-show = debug.x("0x603000", "gx", 100)
-debug.c()
-user_id = show.split("ID")[1].split("= ")[1].split("\n")[0]
-debug.e("free %s" % user_id, skipbp=True)
-debug.e("new %s" % ("A"*0x107))
-show = debug.e("show")
-user_id = show.split("ID")[1].split("= ")[1].split("\n")[0]
-debug.e("free %s" % user_id, prompt=True)
-debug.i()
+debug = Pwndbg("./crackme2", until="plz! \n")  # (1)
+debug.bp("*0x40073f")  # (2)
+debug.r()
+debug.e("blabla", prompt=True)  # (3)
+debug.i()  # (4)
+debug.c()  # (5)
+r = debug.e("niark", skipbp=True)  # (6) (will also print the debug info)
+if "Password" in r:  # (7)
+    debug.e("plop", prompt=True)
+    debug.ni()  # (8)
+    debug.set("$rax", "0")
+    debug.c(until="Flag is: ")  # (9)
+    print(debug.recv(prompt=True))  # (10)
 
 ```
+1. This crackme waits for an input on `STDIN` so we tell gdbhelper that, before returning from every `recv`, it needs to
+find the string `"plz !\n"`
+2. We set our BP and run the program
+3. We send our first output, `"blabla"`, and wait for Pwndbg's prompt (due to BP), with the `execute` method (`e` is
+simply a short name)
+4. As we want to perform multiple operations at that BP, we ask gdbhelper to open an interactive shell (which we quit
+either with `^C` or `^D`) with the `interactive` method (`i` is simply a short name)
+5. We continue the execution of the program
+6. We send our second input (from the script but maybe we did a lot during the interactive session) and tell gdbhelper
+to not stop the execution when meeting a BP and to wait for the usual `until` string; This has for effect to stack the
+output, meaning that the `r` variable contains all output/debug info since we sent our input
+7. If we find the string `"Password"` in `r`, that means we're still not finished (damn! That's hard!)
+8. After sending our third input and stopping at the `strcmp` again, we're pissed and just decide to screw up the
+crackme by simple stepping and setting `RAX` to `0` to bypass the comparison
+9. We now wait for a new string, `"Flag is: "`, to return instead of the usual `"plz! \n"`
+10. We print the flag (I don't think that's the good one though)
+
+You can obviously use all `gdbhelper.Gdb` methods from `gdbhelper.Peda` or `gdbhelper.Pwndbg`. I invite you to discover
+all available methods of those three classes with their arguments by yourself.
