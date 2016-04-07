@@ -136,6 +136,10 @@ class Gdb(object):
         reg, value = x.split(":")
         return reg, value.strip()
 
+    def registers(self):
+        self.send("info register")
+        return self._waitprompt()
+
     def r(self, args=None, until=None, prompt=False, skipbp=False):
         if args is not None:
             cmd = "run %s" % args

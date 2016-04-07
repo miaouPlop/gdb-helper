@@ -25,14 +25,27 @@ alias gdb='echo "" > ~/.gdbinit && /usr/bin/gdb'
 This way, when you'll use Peda it will be able to launch it from anywhere on your system.
 
 ## Basics
-The script uses [pwntools](https://github.com/Gallopsled/pwntools)'s "process" to launch GDB in a subprocess and
-communicate with it. Then it basically sends GDB commands like "run", "breakpoint", etc. to instrument it.
-
-
+Let's begin by using "crackme1" (32b). After an incredibly hard analysis we saw that 0x8048545 seems interesting
+(strcmp) so we'll launch our program and break the to see what's going on.
 ```python
-from pedahelper import *
-debug = Gdb("./examples/crackme1")
+# coding=utf-8
+
+
+from gdbhelper import Gdb
+
+
+debug = Gdb("./crackme1")  # (1)
+debug.bp("*0x8048545")  # (2)
+debug.r("blurp", prompt=True)  # (3)
+value = debug.reg("esp")[1]  # (4)
+print(debug.x(value, "s"))  # (5)
 ```
+1. We load the binary in GDB (it's not being run yet)
+2. We set our breakpoint
+3. We run the binary with its argument and inform gdbhelper that we wait for the GDB prompt (because of the BP) before
+returning a result
+4. We ask for the value of ESP (which is the 1st argument of strcmp)
+5. We print it's value and voilà!
 
 ## Dependancies
 [pwntools](https://github.com/Gallopsled/pwntools)
